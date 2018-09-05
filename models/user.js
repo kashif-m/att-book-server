@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const { Schema } = mongoose.Schema
+const { Schema } = mongoose
 
 const userProfile = new Schema({
   
@@ -21,4 +21,4 @@ const userProfile = new Schema({
   }
 })
 
-module.exports = User = new mongoose.model('users', userProfile)
+module.exports = User = mongoose.model('users', userProfile)

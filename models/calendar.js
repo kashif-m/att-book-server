@@ -1,12 +1,12 @@
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 
-const timetableProfile = new Schema({
+const calendar = new Schema({
 
-  cid: {
+  uid: {
     type: Schema.Types.ObjectId
   },
-  subject: {
+  day: {
     type: String
   },
   date: {
@@ -14,4 +14,4 @@ const timetableProfile = new Schema({
   }
 })
 
-module.exports = Timetable = new mongoose.model('timetable', timetableProfile)
+module.exports = Calendar = new mongoose.model('calendar', calendar)
