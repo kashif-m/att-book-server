@@ -1,24 +1,17 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const app = express()
-const sql = require('mysql')
+const mysql = require('./database/mysqlconfig.js')
 
 const port = process.env.PORT || 5000
 
 // connect to MySQL DB
-sql
-  .createConnection({
-    host: 'localhost',
-    user: 'kashif',
-    password: 'batman',
-    database: 'att_book'
-  })
-  .connect(function(err) {
-    if(err)
-      return console.log('Error connecting to MySQL database ' + err.stack)
-
-    console.log('Connected to MySQL.')
-  })
+mysql.connect(function(err) {
+  if(err)
+  return console.log('Error connecting to MySQL database ' + err.stack)
+  
+  console.log('Connected to MySQL.')
+})
 
 // body parser
 app.use(bodyParser.urlencoded({extended: false}))

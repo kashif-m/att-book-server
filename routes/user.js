@@ -1,35 +1,57 @@
 const bcrypt = require('bcryptjs')
 const express = require('express')
+const uniqid = require('uniqid')
 const router = express.Router()
+const mysql = require('../database/mysqlconfig')
 
 router.post('/add', (req, res) => {
 
   const errors = {}
-  User
-    .findOne({ email: req.body.email })
-    .then(user => {
-      if(user) {
-        errors.emailRegistered = true
+
+  const checkUserQuery = `select * from users where email='${req.body.email}';`
+  mysql.query(
+    checkUserQuery,
+    function(err, result, fields) {
+      if(err)
+        return console.log(err)
+
+      if(result.length === 0) {
+
+        const addUserQuery = `insert into users values('${uniqid.process()}', '${req.body.email}', '');`
+        mysql.query(
+          addUserQuery,
+          function(err, result, fields) {
+            if(err)
+              return console.log(err)
+
+            bcrypt
+              .genSalt(10)
+              .then(salt => {
+                bcrypt
+                  .hash(req.body.password, salt)
+                  .then(hash => {
+                    const updatePassword = `update users set password='${hash}' where email='${req.body.email}';`
+                    mysql.query(
+                      updatePassword,
+                      (err, result, fields) => {
+                        if(err)
+                          return console.log(err)
+        
+                        res.json(result)
+                      }
+                    )
+                  })
+                  .catch(err => console.log(err))
+              })
+              .catch(err => console.log(err))
+          }
+        )
+      } else {
+
+        errors.userExist = true
         return res.status(400).json(errors)
       }
-
-      const newUser = new User({
-        email: req.body.email,
-        password: req.body.password,
-        username: req.body.username
-      })
-
-      bcrypt.genSalt(10, (err, salt) => {
-        bcrypt.hash(newUser.password, salt, (err, hash) => {
-          newUser.password = hash
-          newUser
-            .save()
-            .then(user => res.json(user))
-            .catch(err => res.status(400).json(err))
-        })
     })
-  })
-  .catch(err => res.status(400).json(err))
 })
 
 router.post('/checkUsername', (req, res) => {
