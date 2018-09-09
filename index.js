@@ -19,7 +19,6 @@ app.use(bodyParser.json())
 
 // user-defined routes
 const userRoutes = require('./routes/user.js')
-// const profileRoutes = require('./routes/profile.js')
 // const attendanceRoutes = require('./routes/attendance.js')
 
 // routes
