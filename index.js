@@ -1,9 +1,24 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const app = express()
-const MongoClient = require('mongoose')
+const sql = require('mysql')
 
 const port = process.env.PORT || 5000
+
+// connect to MySQL DB
+sql
+  .createConnection({
+    host: 'localhost',
+    user: 'kashif',
+    password: 'batman',
+    database: 'att_book'
+  })
+  .connect(function(err) {
+    if(err)
+      return console.log('Error connecting to MySQL database ' + err.stack)
+
+    console.log('Connected to MySQL.')
+  })
 
 // body parser
 app.use(bodyParser.urlencoded({extended: false}))
@@ -13,12 +28,6 @@ app.use(bodyParser.json())
 const userRoutes = require('./routes/user.js')
 // const profileRoutes = require('./routes/profile.js')
 // const attendanceRoutes = require('./routes/attendance.js')
-
-// connection to local mongoDB
-MongoClient
-  .connect(require('./config/keys').mongoURI, { useNewUrlParser: true })
-  .then(() => console.log('connected to MONGO.'))
-  .catch(err => console.log(err))
 
 // routes
 app.use('/user', userRoutes)
