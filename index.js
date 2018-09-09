@@ -1,6 +1,6 @@
 const bodyParser = require('body-parser')
 const express = require('express')
-const app = express.Router()
+const app = express()
 const MongoClient = require('mongoose')
 
 const port = process.env.PORT || 5000

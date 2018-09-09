@@ -3,14 +3,14 @@ const express = require('express')
 const router = express.Router()
 const User = require('../models/user')
 
-router.get('/add', (req, res) => {
+router.post('/add', (req, res) => {
 
   const errors = {}
   User
-    .findOne({ username: req.username })
+    .findOne({ email: req.body.email })
     .then(user => {
       if(user) {
-        errors.unameAvailable = false
+        errors.emailRegistered = true
         return res.status(400).json(errors)
       }
 
@@ -31,6 +31,23 @@ router.get('/add', (req, res) => {
     })
   })
   .catch(err => res.status(400).json(err))
+})
+
+router.post('/checkUsername', (req, res) => {
+
+  const errors = {}
+  User
+    .findOne({ username: req.body.username })
+    .then(user => {
+
+      console.log(user)
+      if(user) {
+        errors.available = false
+        return res.status(400).json(errors)
+      }
+
+      res.json({ success: true })
+    })
 })
 
 module.exports = router
