@@ -13,14 +13,12 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
-    "farmhash": "^2.1.0",
     "jsonwebtoken": "^8.3.0",
     "mongoose": "^5.2.13",
     "mysql": "^2.16.0",
     "nodemon": "^1.18.4",
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
-    "promise-mysql": "^3.3.1",
     "uniqid": "^5.0.3"
   }
 }
