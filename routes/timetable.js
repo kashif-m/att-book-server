@@ -8,26 +8,22 @@ const getTimeID = require('../helpers/getTime')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const user = req.user
+  const {user} = req
   const data = JSON.parse(req.body.data)
-  const day = data.day
-  const classes = data.classes
+  const { day, classes } = data
   const length = Object.keys(classes).length
-  console.log(length)
+  var count = 0
+  var timeid
 
   Object.keys(classes).map(key => {
 
     const data = classes[key]
-    var count = 0
-    var timeid
+    const { subject, timeFrom, timeTo } = data
 
-    getTimeID(data.timeFrom, data.timeTo)
-      .then(timeID => {
-
-        timeid = timeID
-        return getSubjectID(data.subject)
-      })
-      .then(sid => {
+    Promise
+      .all([getTimeID(timeFrom, timeTo), getSubjectID(subject)])
+      .then(responses => {
+        const [ timeid, sid ] = responses
 
         const checkQuery = `select uid from timetable where uid = '${user.uid}' and day = '${day}' and sid = '${sid}' and timeid = '${timeid}'`
         mysql.query(
@@ -38,23 +34,22 @@ router.post('/add', passport.authenticate('jwt', { session: false }), (req, res)
 
             if(result.length !== 0)
               return res.json({ success: true })
-            
+              
             const insertQuery = `insert into timetable values('${user.uid}', '${day}', '${sid}', '${timeid}')`
             mysql.query(
               insertQuery,
               (err, result, fields) => {
                 if(err)
                   return console.log(err)
-
+  
                 if(count === length-1)
-                  res.json(result)
-
+                  return res.json(result)
+  
                 count++
               }
             )
           }
         )
-
       })
       .catch(err => console.log(err))
   })
