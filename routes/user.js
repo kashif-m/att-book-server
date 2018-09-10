@@ -69,7 +69,7 @@ router.post('/login', (req, res) => {
   const checkUserQuery = `select uid, password from users where email='${email}'`
   mysql.query(
     checkUserQuery,
-    function(err, result, fields) {
+    (err, result, fields) => {
 
       if(err)
         return console.log(err)
@@ -90,7 +90,7 @@ router.post('/login', (req, res) => {
           const payload = {
             uid: result[0].uid
           }
-    
+
           jwt.sign(payload, secretOrKey, { expiresIn: 3600 }, (err, token) => {
             if(err)
               return console.log(err)
@@ -102,7 +102,7 @@ router.post('/login', (req, res) => {
         })
         .catch(err => console.log(err))
     }
-  )  
+  )
 })
 
 router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => res.json(req.user))

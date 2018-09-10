@@ -24,11 +24,13 @@ app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
 // user-defined routes
-const userRoutes = require('./routes/user.js')
+const userRoutes = require('./routes/user')
+const timetableRoutes = require('./routes/timetable')
 // const attendanceRoutes = require('./routes/attendance.js')
 
 // routes
 app.use('/user', userRoutes)
+app.use('/timetable', timetableRoutes)
 // app.use('/profile', profileRoutes)
 // app.use('/attendance', attendanceRoutes)
 
