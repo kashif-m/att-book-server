@@ -8,7 +8,7 @@ const getTimeID = require('../helpers/getTime')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const {user} = req
+  const { user } = req
   const data = JSON.parse(req.body.data)
   const { day, classes } = data
   const length = Object.keys(classes).length
@@ -38,7 +38,7 @@ router.post('/add', passport.authenticate('jwt', { session: false }), (req, res)
               const insertQuery = `insert into timetable values('${user.uid}', '${day}', '${sid}', '${timeid}')`
               mysql.query(
                 insertQuery,
-                (err, result, fields) => {
+                (err, result) => {
                   if(err)
                     return console.log(err)
                   
@@ -53,6 +53,64 @@ router.post('/add', passport.authenticate('jwt', { session: false }), (req, res)
       })
       .catch(err => console.log(err))
   })
+})
+
+router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  const errors = {}
+
+  const { user } = req
+  const day = req.body.day
+
+  const fetchQuery = `select sid, timeid from timetable where uid = '${user.uid}' and day = '${day}'`
+  mysql.query(
+    fetchQuery,
+    (err, result, field) => {
+      if(err)
+        return console.log(err)
+
+      if(result.length === 0) {
+        errors.exists = false
+        return res.status(404).json(errors)
+      }
+
+      const timetable = {}
+      const len = result.length
+      var count = 0
+      result.map((key, index) => {
+
+        const fetchSubject = `select sname from subjects where sid = '${key.sid}'`
+        mysql.query(
+          fetchSubject,
+          (err, result) => {
+            if(err)
+              return console.log(err)
+
+            console.log(`res: ${result[0].sname}`)
+            timetable[index] = {}
+            timetable[index].subject = result[0].sname
+
+            const fetchTime = `select timeFrom, timeTo from time_data where timeid = '${key.timeid}'`
+            mysql.query(
+              fetchTime,
+              (err, result) => {
+                if(err)
+                  return console.log(err)
+
+                timetable[index].timeFrom = result[0].timeFrom
+                timetable[index].timeTo = result[0].timeTo
+                
+                if(count++ === len - 1) {
+                  res.json(timetable)
+                  console.log(timetable)
+                }
+              }
+            )
+          }
+        )
+      })
+    }
+  )
 })
 
 module.exports = router
