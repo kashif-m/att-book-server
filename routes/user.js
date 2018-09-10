@@ -1,10 +1,11 @@
 const bcrypt = require('bcryptjs')
 const express = require('express')
 const jwt = require('jsonwebtoken')
+const passport = require('passport')
 const uniqid = require('uniqid')
 
 const router = express.Router()
-const mysql = require('../database/mysqlconfig')
+const mysql = require('../config/mysql')
 const secretOrKey = require('../config/keys').secretOrKey
 
 router.post('/add', (req, res) => {
@@ -16,7 +17,7 @@ router.post('/add', (req, res) => {
   const checkUserQuery = `select uid from users where email = '${email}'`
   mysql.query(
     checkUserQuery,
-    function(err, result, fields) {
+    (err, result, fields) => {
 
       if(err)
         return console.log(err)
@@ -103,5 +104,7 @@ router.post('/login', (req, res) => {
     }
   )  
 })
+
+router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => res.json(req.user))
 
 module.exports = router

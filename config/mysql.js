@@ -6,4 +6,5 @@ const connection = sql.createConnection({
                         password: 'batman',
                         database: 'att_book'
                       })
+
 module.exports = connection

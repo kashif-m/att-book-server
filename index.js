@@ -1,17 +1,23 @@
 const bodyParser = require('body-parser')
 const express = require('express')
-const app = express()
-const mysql = require('./database/mysqlconfig.js')
+const passport = require('passport')
 
-const port = process.env.PORT || 5000
+const app = express()
+const mysql = require('./config/mysql')
+
+const port = 5000
 
 // connect to MySQL DB
 mysql.connect(function(err) {
   if(err)
-  return console.log('Error connecting to MySQL database ' + err.stack)
+    return console.log('Error connecting to MySQL database ' + err.stack)
   
   console.log('Connected to MySQL.')
 })
+
+// passport authorization
+app.use(passport.initialize())
+require('./config/passport')(passport)
 
 // body parser
 app.use(bodyParser.urlencoded({extended: false}))
