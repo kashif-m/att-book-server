@@ -3,8 +3,8 @@ const passport = require('passport')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
-const getSubjectID = require('../helpers/getSubject')
-const getTimeID = require('../helpers/getTime')
+const { getSubjectID, getSubject } = require('../helpers/getSubject')
+const { getTimeID, getTime } = require('../helpers/getTime')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
 
@@ -75,39 +75,22 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
       }
 
       const timetable = {}
-      const len = result.length
+      const length = result.length
       var count = 0
+      
       result.map((key, index) => {
-
-        const fetchSubject = `select sname from subjects where sid = '${key.sid}'`
-        mysql.query(
-          fetchSubject,
-          (err, result) => {
-            if(err)
-              return console.log(err)
-
-            console.log(`res: ${result[0].sname}`)
+        Promise
+          .all([getTime(key.timeid), getSubject(key.sid)])
+          .then(responses => {
+            const [ timeData, sName ] = responses
             timetable[index] = {}
-            timetable[index].subject = result[0].sname
+            timetable[index].sName = sName
+            timetable[index].timeData = timeData
 
-            const fetchTime = `select timeFrom, timeTo from time_data where timeid = '${key.timeid}'`
-            mysql.query(
-              fetchTime,
-              (err, result) => {
-                if(err)
-                  return console.log(err)
-
-                timetable[index].timeFrom = result[0].timeFrom
-                timetable[index].timeTo = result[0].timeTo
-                
-                if(count++ === len - 1) {
-                  res.json(timetable)
-                  console.log(timetable)
-                }
-              }
-            )
-          }
-        )
+            if(count++ === length - 1)
+              res.json(timetable)
+          })
+          .catch(err => console.log(err))
       })
     }
   )
