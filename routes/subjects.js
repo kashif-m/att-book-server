@@ -1,5 +1,4 @@
 const express = require('express')
-const farmhash = require('farmhash')
 const passport = require('passport')
 const uniqid = require('uniqid')
 
@@ -11,7 +10,7 @@ router.post('/add',  passport.authenticate('jwt', { session: false }), (req, res
   const subjects = req.body.subjects.split(',')
   for(let i = 0; i < subjects.length; i++) {
 
-    const sid = farmhash.hash32(subjects[i])
+    const sid = uniqid.process()
     // check if subject exists
     const checkSubjectQuery = `select sname from subjects where sid = '${sid}'`
     mysql.query(
