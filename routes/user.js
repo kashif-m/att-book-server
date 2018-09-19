@@ -10,7 +10,7 @@ const secretOrKey = require('../config/keys').secretOrKey
 
 router.post('/add', (req, res) => {
 
-  const errors = {}
+  const error = {}
   const { email, password } = req.body
 
   // check if user exists
@@ -23,15 +23,15 @@ router.post('/add', (req, res) => {
         return console.log(err)
 
       if(result.length !== 0) {
-        errors.userExist = true
-        return res.status(400).json(errors)
+        error.msg = 'E-mail is already registered.'
+        return res.status(400).json(error)
       }
-      
+
       const addUserQuery = `insert into users values('${uniqid.process()}', '${email}', 'unset')`
       mysql.query(
         addUserQuery,
         function(err, result) {
-          
+
           if(err)
             return console.log(err)
           // generate a hash for the given password
@@ -63,7 +63,7 @@ router.post('/add', (req, res) => {
 
 router.post('/login', (req, res) => {
 
-  const errors = {}
+  const error = {}
   const { email, password } = req.body
 
   const checkUserQuery = `select uid, password from users where email='${email}'`
@@ -75,16 +75,16 @@ router.post('/login', (req, res) => {
         return console.log(err)
 
       if(result.length === 0) {
-        errors.userExist = false
-        return res.status(404).json(errors)
+        error.msg = 'User not found.'
+        return res.status(404).json(error)
       }
 
       bcrypt
         .compare(password, result[0].password)
         .then(isMatch => {
           if(!isMatch) {
-            errors.password = 'Incorrect password.'
-            return res.status(400).json(errors)
+            error.msg = 'Incorrect password.'
+            return res.status(400).json(error)
           }
 
           const payload = {
@@ -95,9 +95,7 @@ router.post('/login', (req, res) => {
             if(err)
               return console.log(err)
 
-            res.json({
-              token: 'Bearer ' + token
-            })
+            res.json({ token: 'Bearer ' + token })
           })
         })
         .catch(err => console.log(err))

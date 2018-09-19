@@ -18,14 +18,14 @@ module.exports = passport => {
           return console.log(err)
 
         if(result) {
-          
+
           const user = {
             uid: result[0].uid,
             email: result[0].email
           }
           return done(null, user)
         }
-          
+
         console.log(result)
         return done(null, false)
       }

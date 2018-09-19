@@ -10,9 +10,8 @@ router.post('/add',  passport.authenticate('jwt', { session: false }), (req, res
   const subjects = req.body.subjects.split(',')
   for(let i = 0; i < subjects.length; i++) {
 
-    const sid = uniqid.process()
     // check if subject exists
-    const checkSubjectQuery = `select sname from subjects where sid = '${sid}'`
+    const checkSubjectQuery = `select sid from subjects where sname = '${subjects[i]}'`
     mysql.query(
       checkSubjectQuery,
       (err, result, fields) => {
@@ -20,7 +19,7 @@ router.post('/add',  passport.authenticate('jwt', { session: false }), (req, res
           return console.log(err)
 
         if(result.length === 0) {
-          const insertSubjectQuery = `insert into subjects values('${sid}', '${subjects[i]}')`
+          const insertSubjectQuery = `insert into subjects values('${uniqid.process()}', '${subjects[i]}')`
           mysql.query(
             insertSubjectQuery,
             (err, result) => {

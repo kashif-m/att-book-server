@@ -2,3 +2,7 @@ client
 node_modules
 npm-debug.log
 test.js
+*.odt*
+*.pdf
+*.gvdesign
+*.png

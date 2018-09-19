@@ -31,8 +31,8 @@ const timetableRoutes = require('./routes/timetable')
 
 // routes
 app.use('/user', userRoutes)
-app.use('/subjects', subjectRoutes)
 app.use('/timetable', timetableRoutes)
+app.use('/subjects', subjectRoutes)
 // app.use('/profile', profileRoutes)
 // app.use('/attendance', attendanceRoutes)
 
