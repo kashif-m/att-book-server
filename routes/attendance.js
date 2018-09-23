@@ -6,40 +6,46 @@ const router = express.Router()
 const { getSubjectID, getSubject } = require('../helpers/getSubject')
 const { getTimeID, getTime } = require('../helpers/getTime')
 
-router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/set', passport.authenticate('jwt', { session: false }), (req, res) => {
 
   const { user } = req
-  const { subject, timeFrom, timeTo, _date, present, pending } = req.body.data
+  const data = JSON.parse(req.body.data)
+  const { subject, timeFrom, timeTo, _date, present, pending } = data
 
   Promise
     .all([getTimeID(timeFrom, timeTo), getSubjectID(subject)])
     .then(responses => {
-      const { timeid, sid } = responses
+      const timeid = responses[0]
+      const sid = responses[1]
 
-      const checkQuery = `select uid, _date from attendance where timeid = '${timeid}' and sid = '${sid}'`
-      mysql.query(
-        checkQuery,
-        (err, result, fields) => {
-          if(err)
-            return console.log(err)
+      const checkQuery = `select uid, _date from attendance
+        where uid = '${user.uid}' AND
+        sid = '${sid}' AND
+        timeid = '${timeid}' AND
+        _date = '${_date}'`
 
+      mysql
+        .query(checkQuery)
+        .then(result => {
+          var query
           if(result.length === 0) {
-            const insertQuery = `insert into attendance values('${user.uid}', '${sid}',
-                                  '${timeid}', '${_date}', '${present}', '${pending}')`
-            mysql.query(
-              insertQuery,
-              (err, result) => {
-                if(err)
-                  return console.log(err)
-
-                res.json(result)
-              }
-            )
+            query = `insert into attendance
+              values('${user.uid}', '${sid}', '${timeid}', '${_date}', '${present}', '${pending}')`
           } else {
-            const updateQuery = `update attendance set present = '${present}'`
+            query = `UPDATE attendance
+            SET present = '${present}',
+                pending = '${pending}'
+            WHERE uid = '${user.uid}' AND
+            sid = '${sid}' AND
+            _date = '${_date}' AND
+            timeid = '${timeid}'`
           }
-        }
-      )
+          return mysql.query(query)
+        })
+        .then(result => res.json(result))
+        .catch(err => console.log(err))
     })
-
+    .catch(err => console.log(err))
 })
+
+module.exports = router

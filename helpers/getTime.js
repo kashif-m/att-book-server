@@ -18,7 +18,7 @@ module.exports = {
           const insertTimeQuery = `insert into time_data values('${timeid}', '${timeFrom}', '${timeTo}')`
           mysql
             .query(insertTimeQuery)
-            .then(result => resolve(timeid))
+            .then(() => resolve(timeid))
             .catch(err => reject(err))
         })
         .catch(err => reject(err))

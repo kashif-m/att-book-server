@@ -27,14 +27,14 @@ app.use(bodyParser.json())
 const userRoutes = require('./routes/user')
 const subjectRoutes = require('./routes/subjects')
 const timetableRoutes = require('./routes/timetable')
-// const attendanceRoutes = require('./routes/attendance.js')
+const attendanceRoutes = require('./routes/attendance.js')
 
 // routes
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
 app.use('/subjects', subjectRoutes)
 // app.use('/profile', profileRoutes)
-// app.use('/attendance', attendanceRoutes)
+app.use('/attendance', attendanceRoutes)
 
 app.listen(port, () => {
   console.log(`Running on port ${port}`)
