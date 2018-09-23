@@ -8,10 +8,10 @@ const mysql = require('./config/mysql')
 const port = 5000
 
 // connect to MySQL DB
-mysql.connect(function(err) {
+mysql.connection.connect(err => {
   if(err)
-    return console.log('Error connecting to MySQL database ' + err.stack)
-  
+    return console.log('Error connecting to MySQL database ' + err)
+
   console.log('Connected to MySQL.')
 })
 

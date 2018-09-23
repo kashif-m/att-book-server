@@ -8,6 +8,8 @@ const router = express.Router()
 const mysql = require('../config/mysql')
 const secretOrKey = require('../config/keys').secretOrKey
 
+
+// ROUTES.
 router.post('/add', (req, res) => {
 
   const error = {}
@@ -15,50 +17,41 @@ router.post('/add', (req, res) => {
 
   // check if user exists
   const checkUserQuery = `select uid from users where email = '${email}'`
-  mysql.query(
-    checkUserQuery,
-    (err, result, fields) => {
-
-      if(err)
-        return console.log(err)
+  mysql
+    .query(checkUserQuery)
+    .then(result => {
 
       if(result.length !== 0) {
         error.msg = 'E-mail is already registered.'
-        return res.status(400).json(error)
+        res.status(400).json(error)
+        return
       }
 
+      // add user to database with unset password
       const addUserQuery = `insert into users values('${uniqid.process()}', '${email}', 'unset')`
-      mysql.query(
-        addUserQuery,
-        function(err, result) {
-
-          if(err)
-            return console.log(err)
-          // generate a hash for the given password
-          bcrypt
-            .genSalt(10)
-            .then(salt => {
-              bcrypt
-                .hash(password, salt)
-                .then(hash => {
-                  // update the password in the column
-                  const updatePasswordQuery = `update users set password='${hash}' where email='${email}'`
-                  mysql.query(
-                    updatePasswordQuery,
-                    (err, result) => {
-                      if(err)
-                        return console.log(err)
-
-                      res.json(result)
-                    }
-                  )
-                })
-                .catch(err => console.log(err))
-            })
-            .catch(err => console.log(err))
-        }
-      )
+      return mysql.query(addUserQuery)
     })
+    .then(result => {
+      if(!result)
+        return
+
+      // hash password and update
+      bcrypt
+        .genSalt(10)
+        .then(salt => {
+          return bcrypt.hash(password, salt)
+        })
+        .then(hash => {
+          // update password in the column
+          const updatePasswordQuery = `update users set password='${hash}' where email='${email}'`
+          return mysql.query(updatePasswordQuery)
+        })
+        .then(result => {
+          res.json(result)
+        })
+        .catch(err => console.log(err))
+    })
+    .catch(err => console.log(err))
 })
 
 router.post('/login', (req, res) => {
