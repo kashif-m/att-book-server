@@ -47,7 +47,7 @@ router.post('/add', (req, res) => {
           return mysql.query(updatePasswordQuery)
         })
         .then(result => {
-          res.json(result)
+          return res.json(result)
         })
         .catch(err => console.log(err))
     })
@@ -60,18 +60,15 @@ router.post('/login', (req, res) => {
   const { email, password } = req.body
 
   const checkUserQuery = `select uid, password from users where email='${email}'`
-  mysql.query(
-    checkUserQuery,
-    (err, result, fields) => {
-
-      if(err)
-        return console.log(err)
-
+  mysql
+    .query(checkUserQuery)
+    .then((result, field) => {
+      
       if(result.length === 0) {
         error.msg = 'User not found.'
         return res.status(404).json(error)
       }
-
+      
       bcrypt
         .compare(password, result[0].password)
         .then(isMatch => {
@@ -84,16 +81,15 @@ router.post('/login', (req, res) => {
             uid: result[0].uid
           }
 
-          jwt.sign(payload, secretOrKey, { expiresIn: 3600 }, (err, token) => {
+          jwt.sign(payload, secretOrKey, { expiresIn: 86400 }, (err, token) => {
             if(err)
               return console.log(err)
 
             res.json({ token: 'Bearer ' + token })
           })
         })
-        .catch(err => console.log(err))
-    }
-  )
+    })
+    .catch(err => console.log(err))
 })
 
 router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => res.json(req.user))

@@ -7,43 +7,30 @@ module.exports = {
     
     return new Promise((resolve, reject) => {
       const checkSubjectQuery = `select sid from subjects where sname = '${subject}'`
-      mysql.query(
-        checkSubjectQuery,
-        (err, result) => {
-          if(err)
-            return reject(console.log(err))
-
+      mysql
+        .query(checkSubjectQuery)
+        .then(result => {
+          
           if(result.length !== 0)
             return resolve(result[0].sid)
-
+          
           const sid = uniqid.process()
           const insertSubjectQuery = `insert into subjects values('${sid}', '${subject}')`
-          mysql.query(
-            insertSubjectQuery,
-            (err) => {
-              if(err)
-                return reject(console.log(err))
-
-              resolve(sid)
-            }
-          )
-        }
-      )
+          mysql
+            .query(insertSubjectQuery)
+            .then(() => resolve(sid))
+        })
+        .catch(err => reject(err))
     })
   },
   getSubject: function(sid) {
 
     return new Promise((resolve, reject) => {
       const fetchSubject = `select sname from subjects where sid = '${sid}'`
-      mysql.query(
-        fetchSubject,
-        (err, result) => {
-          if(err)
-            return reject(console.log(err))
-
-          resolve(result[0].sname)
-        }
-      )
+      mysql
+        .query(fetchSubject)
+        .then(result => resolve(result[0].sname))
+        .catch(err => reject(err))
     })
   }
 }
