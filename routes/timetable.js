@@ -4,79 +4,73 @@ const uniqid = require('uniqid')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
-const { getSubjectID, getSubject } = require('../helpers/getSubject')
-const { getTimeID, getTime } = require('../helpers/getTime')
+const helpers = require('../helpers/helpers')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const { user } = req
-  const dataid = uniqid.process()
-  
-  const checkQuery = `select dataid from timetable where uid = '${user.uid}'`
-  mysql
-    .query(checkQuery)
-    .then(result => {
+  const error = {}
+  const { user, body } = req
+  const data = JSON.parse(body.data)
+  const totalDays = Object.keys(data).length
+  var dayCount = 0, classCount = 0, dataid, sid, timeid
 
-      if(result && result.length === 1) {
-        res.json('Already exists')
-        return
-      }
-      // create user's timetable id
-      const insertQuery = `insert into timetable values('${user.uid}', '${dataid}')`
-      return mysql.query(insertQuery)
-    })
-    .then(result => {
-
-      // result will be null if user already exists [previous then]
-      if(!result)
-        return
-      // retrieve data from body document
-      const data = JSON.parse(req.body.data)
-      const totalDays = Object.keys(data).length
-      var dayCount = 0, affectedRows = 0      
-      // map through each day
-      Object
-        .keys(data)
-        .map(day => {
-          const classes = data[day]
-          const totalClasses = Object.keys(classes).length
-
-          // map through each class in a day
-          Object
-            .keys(classes)
-            .map(classNo => {
-              const data = classes[classNo]
-              const { subject, timeFrom, timeTo } = data
-
-              // get time identifier and subject identifier
-              Promise
-                .all([getTimeID(timeFrom, timeTo), getSubjectID(subject)])
-                .then(responses => {
-
-                  const [ timeid, sid ] = responses
-                  // insert a single class into table
-                  const insertQuery = `insert into timetable_data values('${dataid}', '${classNo}', '${sid}', '${timeid}', '${day}')`
-                  return mysql.query(insertQuery)
-                })
-                .then(result => {
-                  // update affected rows
-                  affectedRows += result ? result.affectedRows : 0
-                  if(parseInt(classNo) === totalClasses)
-                    dayCount++
-                  if(dayCount === totalDays && parseInt(classNo) === totalClasses)
-                    return res.json(affectedRows)
-                })
-                .catch(err => console.log(err))
-            })
-        })
+  helpers
+    .getDataID(user.uid)
+    .then(id => {
+      dataid = id
     })
     .catch(err => console.log(err))
+
+  // map each day
+  Object
+    .keys(data)
+    .map(day => {
+      const classes = data[day]
+      const totalClasses = Object.keys(classes).length
+      // map each class in a day
+      Object
+        .keys(classes)
+        .map(classNo => {
+          const { subject, timeFrom, timeTo } = classes[classNo]
+          Promise
+            .all([helpers.getTimeID(timeFrom, timeTo), helpers.getSubjectID(subject)])
+            .then(responses => {
+              timeid = responses[0]
+              sid = responses[1]
+              const checkQuery = `select * from timetable_data
+                where dataid = '${dataid}' AND
+                class_no = '${classNo}' AND
+                sid = '${sid}' AND
+                timeid = '${timeid}' AND
+                day = '${day}'`
+              return mysql.query(checkQuery)
+            })
+            .then(result => {
+              if(++classCount === totalClasses)
+                if(++dayCount !== totalDays)
+                  classCount = 0
+
+              if(result.length === 0) {
+                const insertQuery = `insert into timetable_data
+                  values('${dataid}', '${classNo}', '${sid}', '${timeid}', '${day}')`
+                return mysql.query(insertQuery)
+              }
+              if(classCount === totalClasses && dayCount === totalDays)
+                return
+            })
+            .then(result => {
+              if(!result || (classCount === totalClasses && dayCount === totalDays)) {
+                return res.json('done')
+              }
+            })
+            .catch(err => console.log(err))                
+        })
+    })
 })
 
 router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
 
   const error = {}
-
   const { user } = req
   const day = req.body.day
 

@@ -4,14 +4,12 @@ const passport = require('passport')
 
 const app = express()
 const mysql = require('./config/mysql')
-
 const port = 5000
 
 // connect to MySQL DB
 mysql.connection.connect(err => {
   if(err)
     return console.log('Error connecting to MySQL database ' + err)
-
   console.log('Connected to MySQL.')
 })
 

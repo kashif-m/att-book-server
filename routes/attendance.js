@@ -3,8 +3,8 @@ const passport = require('passport')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
-const { getSubjectID, getSubject } = require('../helpers/getSubject')
-const { getTimeID, getTime } = require('../helpers/getTime')
+const { getSubjectID, getSubject } = require('../helpers/helpers')
+const { getTimeID, getTime } = require('../helpers/helpers')
 
 router.post('/set', passport.authenticate('jwt', { session: false }), (req, res) => {
 
