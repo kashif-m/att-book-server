@@ -13,7 +13,6 @@ module.exports = {
           if(err)
             return reject(console.log(err))
 
-          console.log(result)
           if(result.length !== 0)
             return resolve(result[0].timeid)
 
