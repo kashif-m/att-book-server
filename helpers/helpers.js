@@ -12,7 +12,7 @@ module.exports = {
 
           if(result.length !== 0)
             return resolve(result[0].timeid)
-          
+
           const timeid = uniqid.process()
           const insertTimeQuery = `insert into time_data values('${timeid}', '${timeFrom}', '${timeTo}')`
           mysql
@@ -29,27 +29,27 @@ module.exports = {
       const fetchTime = `select timeFrom, timeTo from time_data where timeid = '${timeid}'`
       mysql
         .query(fetchTime)
-        .then(result => resolve(result[0].timeid))
+        .then(result => resolve(result[0].timeFrom, result[0].timeTo))
         .catch(err => reject(err))
     })
   },
   getSubjectID: function(subject) {
-    
+
     return new Promise((resolve, reject) => {
 
       const checkSubjectQuery = `select sid from subjects where sname = '${subject}'`
+      var sid
       mysql
         .query(checkSubjectQuery)
         .then(result => {
           if(result.length !== 0)
             return resolve(result[0].sid)
 
-          const sid = uniqid.process()
+          sid = uniqid.process()
           const insertSubjectQuery = `insert into subjects values('${sid}', '${subject}')`
-          mysql
-            .query(insertSubjectQuery)
-            .then(() => resolve(sid))
+          return mysql.query(insertSubjectQuery)
         })
+        .then(() => resolve(sid))
         .catch(err => reject(err))
     })
   },

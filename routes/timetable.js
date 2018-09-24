@@ -6,32 +6,36 @@ const mysql = require('../config/mysql')
 const router = express.Router()
 const helpers = require('../helpers/helpers')
 
-router.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
   const error = {}
   const { user, body } = req
   const data = JSON.parse(body.data)
   const totalDays = Object.keys(data).length
-  var dayCount = 0, classCount = 0, dataid, sid, timeid
+  var dayCount = 0, classCount = 0, sid, timeid
 
-  helpers
-    .getDataID(user.uid)
-    .then(id => {
-      dataid = id
-    })
-    .catch(err => console.log(err))
+  const dataid = await helpers.getDataID(user.uid)
+  console.log(dataid)
 
+  let i = 0
+  let j = 0
   // map each day
   Object
-    .keys(data)
-    .map(day => {
+  .keys(data)
+  .map(day => {
+
+    setTimeout(() => {
       const classes = data[day]
       const totalClasses = Object.keys(classes).length
       // map each class in a day
       Object
         .keys(classes)
         .map(classNo => {
+
+          setTimeout(() => {
           const { subject, timeFrom, timeTo } = classes[classNo]
+
+          // fetch time and subject IDs
           Promise
             .all([helpers.getTimeID(timeFrom, timeTo), helpers.getSubjectID(subject)])
             .then(responses => {
@@ -63,8 +67,10 @@ router.post('/add', passport.authenticate('jwt', { session: false }), (req, res)
                 return res.json('done')
               }
             })
-            .catch(err => console.log(err))                
+            .catch(err => console.log(err))
+          }, 10*j++)
         })
+      }, 10*i++)
     })
 })
 
