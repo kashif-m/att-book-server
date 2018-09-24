@@ -10,7 +10,7 @@ const secretOrKey = require('../config/keys').secretOrKey
 
 
 // ROUTES.
-router.post('/add', (req, res) => {
+router.post('/register', (req, res) => {
 
   const error = {}
   const { email, password } = req.body
