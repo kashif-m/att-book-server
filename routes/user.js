@@ -8,21 +8,24 @@ const router = express.Router()
 const mysql = require('../config/mysql')
 const secretOrKey = require('../config/keys').secretOrKey
 
+// validators
+const { validateRegister, validateLogin } = require('../validation/validators')
 
-// ROUTES.
 router.post('/register', (req, res) => {
 
-  const error = {}
+  const { errors, isValid } = validateRegister(req.body)
+  if(!isValid)
+    return res.status(400).json(errors)
+
   const { email, password } = req.body
-  // check if user exists
   const checkUserQuery = `select uid from users where email = '${email}'`
   mysql
     .query(checkUserQuery)
     .then(result => {
 
       if(result.length !== 0) {
-        error.msg = 'E-mail is already registered.'
-        res.status(400).json(error)
+        errors.msg = 'E-mail is already registered.'
+        res.status(400).json(errors)
         return
       }
       // add user to database with unset password
@@ -49,25 +52,27 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
 
-  const error = {}
+  const { errors, isValid } = validateLogin(req.body)
+  if(!isValid)
+    return res.status(400).json(errors)
+
   const { email, password } = req.body
-  // check if user exists
   const checkUserQuery = `select uid, password from users where email='${email}'`
   mysql
     .query(checkUserQuery)
     .then(result => {
 
       if(result.length === 0) {
-        error.msg = 'User not found.'
-        return res.status(404).json(error)
+        errors.msg = 'User not found.'
+        return res.status(404).json(errors)
       }
       // use bcrypt to compare the passwords
       bcrypt
         .compare(password, result[0].password)
         .then(isMatch => {
           if(!isMatch) {
-            error.msg = 'Incorrect password.'
-            return res.status(400).json(error)
+            errors.msg = 'Incorrect password.'
+            return res.status(400).json(errors)
           }
 
           const payload = {

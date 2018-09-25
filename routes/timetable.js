@@ -1,49 +1,48 @@
 const express = require('express')
 const passport = require('passport')
-const uniqid = require('uniqid')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
 const helpers = require('../helpers/helpers')
 
+// validators
+const { validateTimetableAdd, validateDay } = require('../validation/validators')
+
 router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
-  const error = {}
   const { user, body } = req
-  const data = JSON.parse(body.data)
-  const totalDays = Object.keys(data).length
-  var dayCount = 0, classCount = 0, sid, timeid
+  const { data, errors, isValid } = validateTimetableAdd(body.data)
+  if(!isValid)
+    return res.status(400).json(errors)
 
+  const totalDays = Object.keys(data).length
+  var dayCount = 0, classCount = 0
   const dataid = await helpers.getDataID(user.uid)
-  console.log(dataid)
 
   let i = 0
   let j = 0
   // map each day
-  Object
-  .keys(data)
-  .map(day => {
+  Object.keys(data).map(day => {
 
     setTimeout(() => {
       const classes = data[day]
       const totalClasses = Object.keys(classes).length
       // map each class in a day
-      Object
-        .keys(classes)
-        .map(classNo => {
+      var sid, timeid
+      Object.keys(classes).map(classNo => {
 
           setTimeout(() => {
           const { subject, timeFrom, timeTo } = classes[classNo]
-
           // fetch time and subject IDs
           Promise
             .all([helpers.getTimeID(timeFrom, timeTo), helpers.getSubjectID(subject)])
             .then(responses => {
               timeid = responses[0]
               sid = responses[1]
+              console.log(timeid, sid)
               const checkQuery = `select * from timetable_data
                 where dataid = '${dataid}' AND
-                class_no = '${classNo}' AND
+                class_no = ${classNo} AND
                 sid = '${sid}' AND
                 timeid = '${timeid}' AND
                 day = '${day}'`
@@ -63,23 +62,25 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
                 return
             })
             .then(result => {
-              if(!result || (classCount === totalClasses && dayCount === totalDays)) {
+              if(classCount === totalClasses && dayCount === totalDays) {
                 return res.json('done')
               }
             })
             .catch(err => console.log(err))
-          }, 10*j++)
+          }, 50*j++)
         })
-      }, 10*i++)
+      }, 50*i++)
     })
 })
 
 router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const error = {}
-  const { user } = req
   const day = req.body.day
+  const { errors, isValid } = validateDay(day)
+  if(!isValid)
+    return res.status(400).json(errors)
 
+  const { user } = req
   const fetchQuery = `select class_no, sname, timeFrom, timeTo
     from timetable t, subjects s, timetable_data td, time_data tid
     where t.uid = '${user.uid}' AND
@@ -91,23 +92,23 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
     .then(result => {
 
       if(result.length === 0) {
-        error.msg = `No timetable found for ${day}.`
-        return res.status(404).json(error)
+        errors.msg = `No timetable found for ${day}.`
+        return res.status(404).json(errors)
       }
 
       const timetable = {}
       const length = result.length
 
-      result.map((key, index) => {
-        // init
-        timetable[index] = {}
-        timetable[index].time = {}
-        // populate
-        timetable[index].sName = key.sname
-        timetable[index].time.from = key.timeFrom
-        timetable[index].time.to = key.timeTo
+      result.map(data => {
+
+        const { sname, timeFrom, timeTo, class_no } = data
+        timetable[class_no] = {
+          subject: sname,
+          timeFrom,
+          timeTo
+        }
         
-        if(key.class_no === length)
+        if(data.class_no === length)
           res.json(timetable)
       })
     })
