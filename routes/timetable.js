@@ -19,8 +19,7 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
   var dayCount = 0, classCount = 0
   const dataid = await helpers.getDataID(user.uid)
 
-  let i = 0
-  let j = 0
+  let i = 0, j = 0, affectedRows = 0
   // map each day
   Object.keys(data).map(day => {
 
@@ -39,7 +38,6 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
             .then(responses => {
               timeid = responses[0]
               sid = responses[1]
-              console.log(timeid, sid)
               const checkQuery = `select * from timetable_data
                 where dataid = '${dataid}' AND
                 class_no = ${classNo} AND
@@ -62,8 +60,10 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
                 return
             })
             .then(result => {
+              if(result)
+                affectedRows += result.affectedRows
               if(classCount === totalClasses && dayCount === totalDays) {
-                return res.json('done')
+                return res.json(result || affectedRows)
               }
             })
             .catch(err => console.log(err))
@@ -82,11 +82,12 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
 
   const { user } = req
   const fetchQuery = `select class_no, sname, timeFrom, timeTo
-    from timetable t, subjects s, timetable_data td, time_data tid
-    where t.uid = '${user.uid}' AND
-    td.day = '${day}' AND
-    s.sid = td.sid AND
-    tid.timeid = td.timeid`
+    from timetable tt, subjects s, timetable_data ttd, time_data td
+    where tt.uid = '${user.uid}' AND
+    tt.dataid = ttd.dataid AND
+    ttd.sid = s.sid AND
+    ttd.timeid = td.timeid AND
+    ttd.day = '${day}'`
   mysql
     .query(fetchQuery)
     .then(result => {
@@ -99,7 +100,7 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
       const timetable = {}
       const length = result.length
 
-      result.map(data => {
+      result.map((data, index) => {
 
         const { sname, timeFrom, timeTo, class_no } = data
         timetable[class_no] = {
@@ -108,7 +109,7 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
           timeTo
         }
         
-        if(data.class_no === length)
+        if(index === length-1)
           res.json(timetable)
       })
     })

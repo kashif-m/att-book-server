@@ -29,7 +29,6 @@ const attendanceRoutes = require('./routes/attendance.js')
 // routes
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
-// app.use('/profile', profileRoutes)
 app.use('/attendance', attendanceRoutes)
 
 app.listen(port, () => {
