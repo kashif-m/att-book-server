@@ -1,6 +1,11 @@
+# client code
 client
+# dependencies
 node_modules
+# logs
 npm-debug.log
+
+# misc
 test.js
 *.odt*
 *.pdf
