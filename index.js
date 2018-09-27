@@ -1,4 +1,5 @@
 const bodyParser = require('body-parser')
+const cors = require('cors')
 const express = require('express')
 const passport = require('passport')
 
@@ -20,6 +21,13 @@ require('./config/passport')(passport)
 // body parser
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
+
+// enable CORS
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions))
 
 // user-defined routes
 const userRoutes = require('./routes/user')
