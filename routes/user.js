@@ -18,7 +18,7 @@ router.post('/register', (req, res) => {
     return res.status(400).json(errors)
 
   const { email, password } = req.body
-  const checkUserQuery = `select uid from users where email = '${email}'`
+  const checkUserQuery = `select uid from user where email = '${email}'`
   mysql
     .query(checkUserQuery)
     .then(result => {
@@ -28,8 +28,13 @@ router.post('/register', (req, res) => {
         res.status(400).json(errors)
         return
       }
+      var date = new Date()
+      const dd = date.getDate()
+      const mm = date.getMonth() + 1
+      const yyyy = date.getFullYear()
+      date = `${yyyy}-${mm}-${dd}`
       // add user to database with unset password
-      const addUserQuery = `insert into users values('${uniqid.process()}', '${email}', 'unset')`
+      const addUserQuery = `insert into user values('${uniqid.process()}', '${email}', 'unset', '${date}')`
       return mysql.query(addUserQuery)
     })
     .then(result => {
@@ -41,10 +46,10 @@ router.post('/register', (req, res) => {
         .then(salt => bcrypt.hash(password, salt))      // return hash
         .then(hash => {
           // update password with hash in the column
-          const updatePasswordQuery = `update users set password='${hash}' where email='${email}'`
+          const updatePasswordQuery = `update user set passHash='${hash}' where email='${email}'`
           return mysql.query(updatePasswordQuery)
         })
-        .then(result => res.json(result))               // responnd with result
+        .then(result => res.json(result))               // respond with result
         .catch(err => console.log(err))
     })
     .catch(err => console.log(err))
@@ -57,7 +62,7 @@ router.post('/login', (req, res) => {
     return res.status(400).json(errors)
 
   const { email, password } = req.body
-  const checkUserQuery = `select uid, password from users where email='${email}'`
+  const checkUserQuery = `select uid, passHash from user where email='${email}'`
   mysql
     .query(checkUserQuery)
     .then(result => {
@@ -68,7 +73,7 @@ router.post('/login', (req, res) => {
       }
       // use bcrypt to compare the passwords
       bcrypt
-        .compare(password, result[0].password)
+        .compare(password, result[0].passHash)
         .then(isMatch => {
           if(!isMatch) {
             errors.msg = 'Incorrect password.'

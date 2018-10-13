@@ -10,13 +10,14 @@ opts.secretOrKey = secretOrKey
 module.exports = passport => {
   passport.use(new JwtStrategy(opts, (jwtPayload, done) => {
 
-    const searchUserQuery = `select * from users where uid = '${jwtPayload.uid}'`
+    const searchUserQuery = `select uID, email from user where uid = '${jwtPayload.uid}'`
     mysql
       .query(searchUserQuery)
       .then(result => {
         if(result) {
+
           const user = {
-            uid: result[0].uid,
+            uid: result[0].uID,
             email: result[0].email
           }
           return done(null, user)

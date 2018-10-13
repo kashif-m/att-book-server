@@ -93,6 +93,21 @@ module.exports = {
       isValid: isEmpty(errors)
     }
   },
+  validateDate: function(data) {
+
+    const errors = {}
+    const date = isEmpty(data) ? '' : `'${data}'`
+
+    if(validator.isEmpty(date))
+      errors.date = 'No date selected.'
+    if(!errors.date && validator.isISO8601(date))
+      errors.date = 'Usage: (YYYY-MM-DD)'
+
+    return {
+      errors,
+      isValid: isEmpty(errors)
+    }      
+  },
   validateAttendanceSet: function(JSONdata) {
 
     const errors = {}
@@ -117,6 +132,8 @@ module.exports = {
       errors.timeTo = 'No time-slot selected.'
     if(validator.isEmpty(_date))
       errors._date = 'No date selected.'
+    if(!errors._date && !validator.isISO8601(_date))
+      errors._date = 'Usage: (YYYY-MM-DD)'
 
     return {
       data,

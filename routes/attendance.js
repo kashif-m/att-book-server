@@ -7,7 +7,7 @@ const { getSubjectID } = require('../helpers/helpers')
 const { getTimeID } = require('../helpers/helpers')
 
 // validators
-const { validateAttendanceSet, validateDay } = require('../validation/validators')
+const { validateAttendanceSet, validateDate } = require('../validation/validators')
 
 router.post('/set', passport.authenticate('jwt', { session: false }), (req, res) => {
 
@@ -24,8 +24,8 @@ router.post('/set', passport.authenticate('jwt', { session: false }), (req, res)
       const timeid = responses[0]
       const sid = responses[1]
 
-      const checkQuery = `select uid, _date from attendance
-        where uid = '${user.uid}' AND
+      const checkQuery = `SELECT uid, _date FROM attendance
+        WHERE uid = '${user.uid}' AND
         sid = '${sid}' AND
         timeid = '${timeid}' AND
         _date = '${_date}'`
@@ -54,21 +54,22 @@ router.post('/set', passport.authenticate('jwt', { session: false }), (req, res)
     .catch(err => console.log(err))
 })
 
-router.get('/:day/get', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.get('/:date/get', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const day = req.params.day
-  const { errors, isValid } = validateDay(day)
+  const _date = req.params.date
+  const { errors, isValid } = validateDate(_date)
   if(!isValid)
     return res.status(400).json(errors)
 
   const { user } = req
-  const fetchQuery = `select dayname(a._date) as day, sname as subject, timeFrom, timeTo, present, pending
-  from attendance a, users u, time_data td, subjects s
-  where u.uid = '${user.uid}' AND
-  u.uid = a.uid AND
-  a.sid = s.sid AND
+  const fetchQuery = `SELECT dayname(${_date}) as _date, sname as subject, timeFrom, timeTo, present, pending
+  FROM attendance a, user u, time_data td, subject s
+  WHERE u.uid = '${user.uid}' AND
+  a.uid = u.uid AND
   a.timeid = td.timeid AND
-  dayname(a._date) = '${day}'`
+  a.sid = s.sid AND
+  _date = '${_date}'
+  ORDER BY timeFrom`
   mysql
     .query(fetchQuery)
     .then(result => {
@@ -78,10 +79,11 @@ router.get('/:day/get', passport.authenticate('jwt', { session: false }), (req, 
       }
 
       const attendance = {}
+      var count = 0
       result.map(data => {
 
         const { subject, timeFrom, timeTo, present, pending } = data
-        attendance[data.day] = {
+        attendance[count++] = {
           subject,
           timeFrom,
           timeTo,
@@ -91,6 +93,7 @@ router.get('/:day/get', passport.authenticate('jwt', { session: false }), (req, 
       })
       res.json(attendance)
     })
+    .catch(err => console.log(err))
 })
 
 module.exports = router

@@ -40,7 +40,7 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
               sid = responses[1]
               const checkQuery = `select * from timetable_data
                 where dataid = '${dataid}' AND
-                class_no = ${classNo} AND
+                classNo = ${classNo} AND
                 sid = '${sid}' AND
                 timeid = '${timeid}' AND
                 day = '${day}'`
