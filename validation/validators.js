@@ -48,21 +48,9 @@ module.exports = {
       isValid: isEmpty(errors)
     }
   },
-  validateTimetableAdd: function(JSONdata) {
+  validateTimetableAdd: function(data) {
 
     const errors = {}
-    let data = {}
-
-    try {
-      data = JSON.parse(JSONdata)
-    } catch(err) {
-      console.log(err)
-      errors.msg = 'Invalid JSON.'
-      return {
-        errors,
-        isValid: false
-      }
-    }
 
     let classes = []
     const days = Object.keys(data)[0]

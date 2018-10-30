@@ -11,7 +11,7 @@ const { validateTimetableAdd, validateDay } = require('../validation/validators'
 router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
   const { user, body } = req
-  const { data, errors, isValid } = validateTimetableAdd(body.data)
+  const { data, errors, isValid } = validateTimetableAdd(body)
   if(!isValid)
     return res.status(400).json(errors)
 
@@ -21,16 +21,15 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
 
   let i = 0, j = 0, affectedRows = 0
   // map each day
-  Object.keys(data).map(day => {
+  Object.keys(data).map(async (day) => {
 
-    setTimeout(() => {
       const classes = data[day]
       const totalClasses = Object.keys(classes).length
-      // map each class in a day
-      var sid, timeid
-      Object.keys(classes).map(classNo => {
 
-          setTimeout(() => {
+      // map each class in a day
+      await Object.keys(classes).map(classNo => {
+
+        let sid, timeid
           const { subject, timeFrom, timeTo } = classes[classNo]
           // fetch time and subject IDs
           Promise
@@ -47,29 +46,27 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
               return mysql.query(checkQuery)
             })
             .then(result => {
-              if(++classCount === totalClasses)
-                if(++dayCount !== totalDays)
-                  classCount = 0
-
               if(result.length === 0) {
                 const insertQuery = `insert into timetable_data
                   values('${dataid}', '${classNo}', '${sid}', '${timeid}', '${day}')`
                 return mysql.query(insertQuery)
               }
-              if(classCount === totalClasses && dayCount === totalDays)
-                return
+              return
             })
             .then(result => {
+              if(++classCount === totalClasses)
+                if(++dayCount !== totalDays)
+                  classCount = 0
+
               if(result)
                 affectedRows += result.affectedRows
               if(classCount === totalClasses && dayCount === totalDays) {
-                return res.json(result || affectedRows)
+                res.json(result || affectedRows)
+                return
               }
             })
             .catch(err => console.log(err))
-          }, 50*j++)
         })
-      }, 50*i++)
     })
 })
 

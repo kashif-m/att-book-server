@@ -14,7 +14,7 @@ module.exports = passport => {
     mysql
       .query(searchUserQuery)
       .then(result => {
-        if(result) {
+        if(result.length !== 0) {
 
           const user = {
             uid: result[0].uID,
