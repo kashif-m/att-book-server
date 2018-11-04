@@ -6,52 +6,37 @@ const router = express.Router()
 const helpers = require('../helpers/helpers')
 
 // validators
-const { validateTimetableAdd, validateDay } = require('../validation/validators')
+const { validateTimetableAdd, validateTag } = require('../validation/validators')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
   const { user, body } = req
-  const { data, errors, isValid } = validateTimetableAdd(body)
+  const { errors, isValid } = validateTimetableAdd(body)
   if(!isValid)
     return res.status(400).json(errors)
 
-  const totalDays = Object.keys(data).length
-  var dayCount = 0, classCount = 0
-  const dataid = await helpers.getDataID(user.uid)
+  const { timetable, tag } = body
+  const totalDays = Object.keys(timetable).length
+  const ttid = await helpers.getTimetableID(user.uid)
 
+  var dayCount = 0, classCount = 0
   let i = 0, j = 0, affectedRows = 0
   // map each day
-  Object.keys(data).map(async (day) => {
+  Object.keys(timetable).map(async (day) => {
 
-      const classes = data[day]
+      const classes = timetable[day]
       const totalClasses = Object.keys(classes).length
 
       // map each class in a day
       await Object.keys(classes).map(classNo => {
 
-        let sid, timeid
-          const { subject, timeFrom, timeTo } = classes[classNo]
+          const { subject } = classes[classNo]
           // fetch time and subject IDs
-          Promise
-            .all([helpers.getTimeID(timeFrom, timeTo), helpers.getSubjectID(subject)])
-            .then(responses => {
-              timeid = responses[0]
-              sid = responses[1]
-              const checkQuery = `select * from timetable_data
-                where dataid = '${dataid}' AND
-                classNo = ${classNo} AND
-                sid = '${sid}' AND
-                timeid = '${timeid}' AND
-                day = '${day}'`
-              return mysql.query(checkQuery)
-            })
-            .then(result => {
-              if(result.length === 0) {
-                const insertQuery = `insert into timetable_data
-                  values('${dataid}', '${classNo}', '${sid}', '${timeid}', '${day}')`
-                return mysql.query(insertQuery)
-              }
-              return
+          helpers.getSubjectID(subject)
+            .then(sid => {
+              const insertQuery = `insert into timetable
+                values('${ttid}', '${day}', ${classNo}, '${sid}', '${tag}')`
+              return mysql.query(insertQuery)
             })
             .then(result => {
               if(++classCount === totalClasses)
@@ -70,27 +55,41 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
     })
 })
 
+router.get('/get-all', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  const {user} = req
+  const fetchQuery = `select distinct tag from timetable tt, profile p
+    where p.uid = '${user.uid}' AND
+      tt.ttid = p.ttid`
+  mysql
+    .query(fetchQuery)
+    .then(async (result) => {
+      const arr = Object.keys(result).map(key => result[key].tag)
+      res.json(arr)
+    })
+    .catch(err => console.log(err))
+})
+
 router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const day = req.body.day
-  const { errors, isValid } = validateDay(day)
+  const { tag } = req.body
+  const { errors, isValid } = validateTag(tag)
   if(!isValid)
     return res.status(400).json(errors)
 
   const { user } = req
-  const fetchQuery = `select class_no, sname, timeFrom, timeTo
-    from timetable tt, subjects s, timetable_data ttd, time_data td
-    where tt.uid = '${user.uid}' AND
-    tt.dataid = ttd.dataid AND
-    ttd.sid = s.sid AND
-    ttd.timeid = td.timeid AND
-    ttd.day = '${day}'`
+  const fetchQuery = `select day, classNo, sname
+    from timetable tt, profile p, subjects s
+    where p.uid = '${user.uid}' AND
+    p.ttid = tt.ttid AND
+    tt.sid = s.sid AND
+    tag = '${tag}'`
   mysql
     .query(fetchQuery)
     .then(result => {
 
       if(result.length === 0) {
-        errors.msg = `No timetable found for ${day}.`
+        errors.msg = `No timetable found for ${day}. (Tag: ${tag})`
         return res.status(404).json(errors)
       }
 
@@ -99,15 +98,14 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
 
       result.map((data, index) => {
 
-        const { sname, timeFrom, timeTo, class_no } = data
-        timetable[class_no] = {
-          subject: sname,
-          timeFrom,
-          timeTo
-        }
-        
-        if(index === length-1)
+        const { day, sname, classNo } = data
+        timetable[day] = timetable[day] || {}
+        timetable[day][classNo] = { subject: sname }
+
+        if(index === length-1) {
+          timetable.tag = tag
           res.json(timetable)
+        }
       })
     })
     .catch(err => console.log(err))

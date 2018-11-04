@@ -53,9 +53,10 @@ module.exports = {
     const errors = {}
 
     let classes = []
-    const days = Object.keys(data)[0]
+    console.log
+    const days = Object.keys(data.timetable)[0]
     if(!isEmpty(days))
-      classes = Object.keys(data[days])
+      classes = Object.keys(data.timetable[days])
 
     if(isEmpty(days))
       errors.data = 'No days to insert.'
@@ -63,18 +64,17 @@ module.exports = {
       errors.data = 'No classes to insert.'
 
     return {
-      data,
       errors,
       isValid: isEmpty(errors)
     }
   },
-  validateDay: function(data) {
+  validateTag: function(data) {
 
     const errors = {}
     const day = isEmpty(data) ? '' : data
 
     if(validator.isEmpty(day))
-      errors.day = 'No day selected.'
+      errors.day = 'No tag found.'
 
     return {
       errors,

@@ -18,6 +18,7 @@ router.post('/register', (req, res) => {
     return res.status(400).json(errors)
 
   const { email, password } = req.body
+  let uid, ttid, aid, date
   const checkUserQuery = `select uid from user where email = '${email}'`
   mysql
     .query(checkUserQuery)
@@ -28,13 +29,14 @@ router.post('/register', (req, res) => {
         res.status(400).json(errors)
         return
       }
-      var date = new Date()
+      date = new Date()
       const dd = date.getDate()
       const mm = date.getMonth() + 1
       const yyyy = date.getFullYear()
       date = `${yyyy}-${mm}-${dd}`
       // add user to database with unset password
-      const addUserQuery = `insert into user values('${uniqid.process()}', '${email}', 'unset', '${date}')`
+      uid = uniqid.process()
+      const addUserQuery = `insert into user values('${uid}', '${email}', 'unset')`
       return mysql.query(addUserQuery)
     })
     .then(result => {
@@ -42,12 +44,18 @@ router.post('/register', (req, res) => {
         return
       // hash password and update
       bcrypt
-        .genSalt(10)
-        .then(salt => bcrypt.hash(password, salt))      // return hash
-        .then(hash => {
-          // update password with hash in the column
-          const updatePasswordQuery = `update user set passHash='${hash}' where email='${email}'`
-          return mysql.query(updatePasswordQuery)
+      .genSalt(10)
+      .then(salt => bcrypt.hash(password, salt))      // return hash
+      .then(hash => {
+        aid = uniqid.process()
+        // update password with hash in the column
+        const updatePasswordQuery = `update user set passHash='${hash}' where uid='${uid}'`
+        return mysql.query(updatePasswordQuery)
+      })
+      .then(result => {
+          ttid = uniqid.process()
+          const insertProfileQuery = `insert into profile values('${uniqid.process()}', '${uid}', '${ttid}', '${aid}', ${0}, '${date}')`
+          return mysql.query(insertProfileQuery)
         })
         .then(result => res.json(result))               // respond with result
         .catch(err => console.log(err))

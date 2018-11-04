@@ -24,7 +24,7 @@ app.use(bodyParser.json())
 
 // enable CORS
 const corsOptions = {
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:3002',
   optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))

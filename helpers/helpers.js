@@ -37,7 +37,7 @@ module.exports = {
 
     return new Promise((resolve, reject) => {
 
-      const checkSubjectQuery = `select sid from subject where sname = '${subject}'`
+      const checkSubjectQuery = `select sid from subjects where sname = '${subject}'`
       var sid
       mysql
         .query(checkSubjectQuery)
@@ -46,7 +46,7 @@ module.exports = {
             return resolve(result[0].sid)
 
           sid = uniqid.process()
-          const insertSubjectQuery = `insert into subject values('${sid}', '${subject}')`
+          const insertSubjectQuery = `insert into subjects values('${sid}', '${subject}')`
           return mysql.query(insertSubjectQuery)
         })
         .then(() => resolve(sid))
@@ -63,22 +63,22 @@ module.exports = {
         .catch(err => reject(err))
     })
   },
-  getDataID: function(uid) {
+  getTimetableID: function(uid) {
 
     return new Promise((resolve, reject) => {
-      var dataid
-      const checkQuery = `select dataid from timetable where uid = '${uid}'`
+      var ttid
+      const checkQuery = `select ttid from profile where uid='${uid}'`
       mysql
         .query(checkQuery)
         .then(result => {
-          if(result.length === 0) {
-            dataid = uniqid.process()
-            var query = `insert into timetable values('${uid}', '${dataid}')`
+          if(result[0].ttid.length === 0) {
+            ttid = uniqid.process()
+            var query = `update profile set ttid='${ttid}' where uid='${uid}'`
             return mysql.query(query)
           }
-          resolve(result[0].dataid)
+          resolve(result[0].ttid)
         })
-        .then(() => resolve(dataid))
+        .then(() => resolve(ttid))
         .catch(err => reject(err))
     })
   }
