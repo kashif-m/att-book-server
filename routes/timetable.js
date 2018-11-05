@@ -15,81 +15,114 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
   if(!isValid)
     return res.status(400).json(errors)
 
-  const { timetable, tag } = body
-  const totalDays = Object.keys(timetable).length
+  const { timetable } = body
   const ttid = await helpers.getTimetableID(user.uid)
+  let affectedRows = 0
+  
+  const daysArr = Object.keys(timetable).map(day => day)
+  const totalDays = daysArr.length
 
-  var dayCount = 0, classCount = 0
-  let i = 0, j = 0, affectedRows = 0
-  // map each day
-  Object.keys(timetable).map(async (day) => {
+  for(var i = 0; i < totalDays; i++) {
 
-      const classes = timetable[day]
-      const totalClasses = Object.keys(classes).length
+    const day = daysArr[i]
 
-      // map each class in a day
-      await Object.keys(classes).map(classNo => {
+    const classesArr = Object.keys(timetable[day])
+    const totalClasses = classesArr.length
 
-          const { subject } = classes[classNo]
-          // fetch time and subject IDs
-          helpers.getSubjectID(subject)
-            .then(sid => {
-              const insertQuery = `insert into timetable
-                values('${ttid}', '${day}', ${classNo}, '${sid}', '${tag}')`
-              return mysql.query(insertQuery)
-            })
-            .then(result => {
-              if(++classCount === totalClasses)
-                if(++dayCount !== totalDays)
-                  classCount = 0
+    for(var j = 0; j < totalClasses; j++) {
 
-              if(result)
-                affectedRows += result.affectedRows
-              if(classCount === totalClasses && dayCount === totalDays) {
-                res.json(result || affectedRows)
-                return
-              }
-            })
-            .catch(err => console.log(err))
-        })
-    })
+      const classNo = classesArr[j]
+      const sid = await helpers.getSubjectID(timetable[day][classNo].subject)
+      const insertQuery = `insert into timetable
+        values('${ttid}', '${day}', ${j+1}, '${sid}')`
+
+      mysql
+        .query(insertQuery)
+        .then(res => affectedRows += res ? res.affectedRows : 0)
+        .catch(err => console.log(err))
+    } // end j loop
+  } // end i loop
+
+  res.json(affectedRows)
 })
 
-router.get('/get-all', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/update', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  
+  const { user, body } = req
+  const { timetable } = body
 
-  const {user} = req
-  const fetchQuery = `select distinct tag from timetable tt, profile p
-    where p.uid = '${user.uid}' AND
-      tt.ttid = p.ttid`
+  const ttid = await helpers.getTimetableID(user.uid)
+  
+  var affectedRows = 0
+  const daysArr = Object.keys(timetable)
+  const totalDays = daysArr.length
+
+  for(var i = 0; i < totalDays; i++) {
+
+    const day = daysArr[i]
+    const totalClasses = Object.keys(timetable[day]).length
+    const classesArr = Object.keys(timetable[day]).filter(classNo => !timetable[day][classNo].delete)
+    const totalUpdateClasses = classesArr.length
+
+    for(var j = 0; j < totalUpdateClasses; j++) {
+
+      const classNo = classesArr[j]
+      const sid = await helpers.getSubjectID(timetable[day][classNo].subject)
+      const replaceQuery = `replace into timetable
+        values('${ttid}', '${day}', ${j+1}, '${sid}')`
+
+      mysql
+        .query(replaceQuery)
+        .then(res => affectedRows += res ? res.affectedRows : 0)
+        .catch(err => console.log(err))
+    }
+
+    if(totalClasses > totalUpdateClasses) {
+      
+      const removeQuery = `delete from timetable
+        where ttid = '${ttid}' AND
+        classNo > ${totalUpdateClasses}`
+      mysql
+        .query(removeQuery)
+        .then(res => affectedRows += res ? res.affectedRows : 0)
+        .catch(err => console.log(err))
+    } // end j loop
+  } // end i loop
+
+  res.json(affectedRows)
+})
+
+router.delete('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
+
+  const { user } = req
+  const ttid = await helpers.getTimetableID(user.uid)
+
+  const removeQuery = `delete from timetable
+    where ttid = '${ttid}'`
+
   mysql
-    .query(fetchQuery)
-    .then(async (result) => {
-      const arr = Object.keys(result).map(key => result[key].tag)
-      res.json(arr)
-    })
+    .query(removeQuery)
+    .then(result => res.json(result))
     .catch(err => console.log(err))
 })
 
-router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
 
-  const { tag } = req.body
-  const { errors, isValid } = validateTag(tag)
-  if(!isValid)
-    return res.status(400).json(errors)
+router.get('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  const errors = {}
 
   const { user } = req
   const fetchQuery = `select day, classNo, sname
     from timetable tt, profile p, subjects s
     where p.uid = '${user.uid}' AND
     p.ttid = tt.ttid AND
-    tt.sid = s.sid AND
-    tag = '${tag}'`
+    tt.sid = s.sid`
   mysql
     .query(fetchQuery)
     .then(result => {
 
       if(result.length === 0) {
-        errors.msg = `No timetable found for ${day}. (Tag: ${tag})`
+        errors.msg = `No timetable found.`
         return res.status(404).json(errors)
       }
 
@@ -102,10 +135,8 @@ router.post('/fetch', passport.authenticate('jwt', { session: false }), (req, re
         timetable[day] = timetable[day] || {}
         timetable[day][classNo] = { subject: sname }
 
-        if(index === length-1) {
-          timetable.tag = tag
+        if(index === length-1)
           res.json(timetable)
-        }
       })
     })
     .catch(err => console.log(err))
