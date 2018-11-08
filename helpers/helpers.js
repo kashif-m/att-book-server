@@ -35,19 +35,20 @@ module.exports = {
   getTimetableID: function(uid) {
 
     return new Promise((resolve, reject) => {
-      var ttid
-      const checkQuery = `select ttid from profile where uid = '${uid}'`
+      const selectQuery = `select ttid from profile where uid = '${uid}'`
       mysql
-        .query(checkQuery)
-        .then(result => {
-          if(result[0].ttid.length === 0) {
-            ttid = uniqid.process()
-            var query = `update profile set ttid='${ttid}' where uid = '${uid}'`
-            return mysql.query(query)
-          }
-          resolve(result[0].ttid)
-        })
-        .then(() => resolve(ttid))
+        .query(selectQuery)
+        .then(result => resolve(result[0].ttid))
+        .catch(err => reject(err))
+    })
+  },
+  getAttendanceID: function(uid) {
+
+    return new Promise((resolve, reject) => {
+      const selectQuery = `select aid from profile where uid = '${uid}'`
+      mysql
+        .query(selectQuery)
+        .then(result => resolve(result[0].aid))
         .catch(err => reject(err))
     })
   }

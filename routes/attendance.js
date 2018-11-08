@@ -3,55 +3,31 @@ const passport = require('passport')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
-const { getSubjectID } = require('../helpers/helpers')
-const { getTimeID } = require('../helpers/helpers')
+const { getSubjectID, getAttendanceID } = require('../helpers/helpers')
 
 // validators
 const { validateAttendanceSet, validateDate } = require('../validation/validators')
 
-router.post('/set', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/set', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
-  const { data, errors, isValid } = validateAttendanceSet(req.body.data)
+  const { errors, isValid } = validateAttendanceSet(req.body)
   if(!isValid)
     return res.status(400).json(errors)
-
+  
   const { user } = req
-  const { subject, timeFrom, timeTo, _date, present, pending } = data
+  const { classNo, status, subject, _date } = req.body
+  const aid = await getAttendanceID(user.uid)
+  const sid = await getSubjectID(subject)
 
-  Promise
-    .all([getTimeID(timeFrom, timeTo), getSubjectID(subject)])
-    .then(responses => {
-      const timeid = responses[0]
-      const sid = responses[1]
+  const present = status === 'present'
+  const pending = status === 'pending'
 
-      const checkQuery = `SELECT uid, _date FROM attendance
-        WHERE uid = '${user.uid}' AND
-        sid = '${sid}' AND
-        timeid = '${timeid}' AND
-        _date = '${_date}'`
-
-      mysql
-        .query(checkQuery)
-        .then(result => {
-          var query
-          if(result.length === 0) {
-            query = `insert into attendance
-              values('${user.uid}', '${sid}', '${timeid}', '${_date}', '${present}', '${pending}')`
-          } else {
-            query = `UPDATE attendance
-            SET present = '${present}',
-                pending = '${pending}'
-            WHERE uid = '${user.uid}' AND
-            sid = '${sid}' AND
-            _date = '${_date}' AND
-            timeid = '${timeid}'`
-          }
-          return mysql.query(query)
-        })
-        .then(result => res.json(result))
-        .catch(err => console.log(err))
-    })
-    .catch(err => console.log(err))
+  const replaceQuery = `replace into attendance
+          values('${aid}', '${_date}', ${classNo}, '${sid}', ${present}, ${pending})`
+  mysql
+  .query(replaceQuery)
+  .then(result => res.json(result))
+  .catch(err => console.log(err))
 })
 
 router.get('/:date/get', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -62,33 +38,32 @@ router.get('/:date/get', passport.authenticate('jwt', { session: false }), (req,
     return res.status(400).json(errors)
 
   const { user } = req
-  const fetchQuery = `SELECT dayname(${_date}) as _date, sname as subject, timeFrom, timeTo, present, pending
-  FROM attendance a, user u, time_data td, subject s
-  WHERE u.uid = '${user.uid}' AND
-  a.uid = u.uid AND
-  a.timeid = td.timeid AND
-  a.sid = s.sid AND
-  _date = '${_date}'
-  ORDER BY timeFrom`
+  const fetchQuery = `SELECT dayname('${_date}') as day, classNo, sName, present, pending
+    FROM attendance a, profile p, subjects s, user u
+    WHERE u.uid = '${user.uid}' AND
+    p.uid = u.uid AND
+    a.aid = p.aid AND
+    s.sid = a.sid AND
+    _date = '${_date}'
+    ORDER BY classNo`
   mysql
     .query(fetchQuery)
     .then(result => {
       if(result.length === 0) {
-        errors.msg = 'No attendance found.'
-        return res.status(404).json(errors)
+        errors.msg = 'No attendance logged.'
+        return res.status(400).json(errors)
       }
 
       const attendance = {}
-      var count = 0
       result.map(data => {
+        
+        const { day, classNo, sName, present, pending } = data
+        if(!attendance[day])
+          attendance[day] = {}
 
-        const { subject, timeFrom, timeTo, present, pending } = data
-        attendance[count++] = {
-          subject,
-          timeFrom,
-          timeTo,
-          present,
-          pending
+        attendance[day][classNo] = {
+          subject: sName,
+          status: present === 1 ? 'present' : pending === 1 ? 'pending' : 'absent'
         }
       })
       res.json(attendance)

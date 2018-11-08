@@ -96,35 +96,22 @@ module.exports = {
       isValid: isEmpty(errors)
     }      
   },
-  validateAttendanceSet: function(JSONdata) {
+  validateAttendanceSet: function(data) {
 
     const errors = {}
-    let data = {}
-    try {
-      data = JSON.parse(JSONdata)
-    } catch(err) {
-      console.log(err)
-      errors.data = 'Invalid JSON.'
-      return {
-        errors,
-        isValid: false
-      }
-    }
-
-    const { subject, timeFrom, timeTo, _date } = data
+    const { classNo, _date, status, subject } = data
+    if(!classNo)
+      errors.classNo = 'No class selected.'
     if(validator.isEmpty(subject))
       errors.subject = 'No subject selected.'
-    if(validator.isEmpty(timeFrom))
-      errors.timeFrom = 'No time-slot selected.'
-    if(validator.isEmpty(timeTo))
-      errors.timeTo = 'No time-slot selected.'
+    if(validator.isEmpty(status))
+      errors.status = 'No status.'
     if(validator.isEmpty(_date))
       errors._date = 'No date selected.'
     if(!errors._date && !validator.isISO8601(_date))
       errors._date = 'Usage: (YYYY-MM-DD)'
 
     return {
-      data,
       errors,
       isValid: isEmpty(errors)
     }

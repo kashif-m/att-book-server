@@ -35,11 +35,12 @@ router.post('/register', (req, res) => {
       const yyyy = date.getFullYear()
       date = `${yyyy}-${mm}-${dd}`
       // add user to database with unset password
-      uid = uniqid.process()
       const addUserQuery = `insert into user values('${uid}', '${email}', 'unset')`
       return mysql.query(addUserQuery)
     })
     .then(result => {
+      uid = uniqid.process()
+
       if(!result)
         return
       // hash password and update
@@ -48,12 +49,14 @@ router.post('/register', (req, res) => {
       .then(salt => bcrypt.hash(password, salt))      // return hash
       .then(hash => {
         aid = uniqid.process()
+
         // update password with hash in the column
         const updatePasswordQuery = `update user set passHash='${hash}' where uid='${uid}'`
         return mysql.query(updatePasswordQuery)
       })
-      .then(result => {
+      .then(() => {
           ttid = uniqid.process()
+          
           const insertProfileQuery = `insert into profile values('${uniqid.process()}', '${uid}', '${ttid}', '${aid}', ${0}, '${date}')`
           return mysql.query(insertProfileQuery)
         })

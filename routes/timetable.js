@@ -6,7 +6,7 @@ const router = express.Router()
 const helpers = require('../helpers/helpers')
 
 // validators
-const { validateTimetableAdd, validateTag } = require('../validation/validators')
+const { validateTimetableAdd } = require('../validation/validators')
 
 router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
@@ -106,9 +106,26 @@ router.delete('/', passport.authenticate('jwt', { session: false }), async (req,
     .catch(err => console.log(err))
 })
 
+router.get('/get/:day', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  const { user } = req
+  const { day } = req.params
+
+  const fetchQuery = `select classNo, sname
+    from timetable tt, profile p, subjects s
+    where p.uid = '${user.uid}' AND
+    p.ttid = tt.ttid AND
+    s.sid = tt.sid AND
+    day = '${day}'`
+
+  mysql
+    .query(fetchQuery)
+    .then(result => res.json(result))
+    .catch(err => console.log(err))
+})
 
 router.get('/fetch', passport.authenticate('jwt', { session: false }), (req, res) => {
-
+  
   const errors = {}
 
   const { user } = req
@@ -121,10 +138,8 @@ router.get('/fetch', passport.authenticate('jwt', { session: false }), (req, res
     .query(fetchQuery)
     .then(result => {
 
-      if(result.length === 0) {
-        errors.msg = `No timetable found.`
-        return res.status(404).json(errors)
-      }
+      if(result.length === 0)
+        return res.json({})
 
       const timetable = {}
       const length = result.length
