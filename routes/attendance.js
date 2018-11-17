@@ -1,5 +1,6 @@
 const express = require('express')
 const passport = require('passport')
+const dateFns = require('date-fns')
 
 const mysql = require('../config/mysql')
 const router = express.Router()
@@ -50,25 +51,55 @@ router.get('/:date/get', passport.authenticate('jwt', { session: false }), (req,
     .query(fetchQuery)
     .then(result => {
       if(result.length === 0) {
-        errors.msg = 'No attendance logged.'
-        return res.status(400).json(errors)
+        return res.json({})
       }
 
-      const attendance = {}
-      result.map(data => {
-        
-        const { day, classNo, sName, present, pending } = data
-        if(!attendance[day])
-          attendance[day] = {}
-
-        attendance[day][classNo] = {
-          subject: sName,
-          status: present === 1 ? 'present' : pending === 1 ? 'pending' : 'absent'
-        }
-      })
+      const attendance = mapAttendance(result)
       res.json(attendance)
     })
     .catch(err => console.log(err))
+})
+
+mapAttendance = (rawData) => {
+  
+  const attendance = {}  
+  rawData.map(dailyAtt => {
+        
+    const { day, classNo, sName, present, pending } = dailyAtt
+    if(!attendance[day])
+      attendance[day] = {}
+
+    attendance[day][classNo] = {
+      subject: sName,
+      status: present === 1 ? 'present' : pending === 1 ? 'pending' : 'absent'
+    }
+  })
+
+  return attendance
+}
+
+router.get('/:date/getWeekly', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  const { user } = req
+  const _date = req.params.date
+  const endDate = dateFns.format(dateFns.addWeeks(_date, 1), 'YYYY-MM-DD')
+
+  const fetchWeeklyQuery = `SELECT dayname(_date) as day, classNo, sName, present, pending
+    FROM attendance a, subjects s, profile p
+    WHERE p.uid='${user.uid}' AND
+      a.aid = p.aid AND
+      s.sid = a.sid AND
+      _date BETWEEN '${_date}' AND '${endDate}'`
+
+  mysql
+    .query(fetchWeeklyQuery)
+    .then(result => {
+
+      if(result.length === 0)
+        return res.json({})
+      const attendance = mapAttendance(result)
+      res.json(attendance)
+    })
 })
 
 module.exports = router

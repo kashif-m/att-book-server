@@ -53,7 +53,6 @@ module.exports = {
     const errors = {}
 
     let classes = []
-    console.log
     const days = Object.keys(data.timetable)[0]
     if(!isEmpty(days))
       classes = Object.keys(data.timetable[days])

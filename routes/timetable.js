@@ -32,7 +32,7 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
     for(var j = 0; j < totalClasses; j++) {
 
       const classNo = classesArr[j]
-      const sid = await helpers.getSubjectID(timetable[day][classNo].subject)
+      const sid = await helpers.getSubjectID(timetable[day][classNo])
       const insertQuery = `insert into timetable
         values('${ttid}', '${day}', ${j+1}, '${sid}')`
 
@@ -61,13 +61,13 @@ router.post('/update', passport.authenticate('jwt', { session: false }), async (
 
     const day = daysArr[i]
     const totalClasses = Object.keys(timetable[day]).length
-    const classesArr = Object.keys(timetable[day]).filter(classNo => !timetable[day][classNo].delete)
+    const classesArr = Object.keys(timetable[day])
     const totalUpdateClasses = classesArr.length
 
     for(var j = 0; j < totalUpdateClasses; j++) {
 
       const classNo = classesArr[j]
-      const sid = await helpers.getSubjectID(timetable[day][classNo].subject)
+      const sid = await helpers.getSubjectID(timetable[day][classNo])
       const replaceQuery = `replace into timetable
         values('${ttid}', '${day}', ${j+1}, '${sid}')`
 
@@ -148,7 +148,7 @@ router.get('/fetch', passport.authenticate('jwt', { session: false }), (req, res
 
         const { day, sname, classNo } = data
         timetable[day] = timetable[day] || {}
-        timetable[day][classNo] = { subject: sname }
+        timetable[day][classNo] = sname
 
         if(index === length-1)
           res.json(timetable)

@@ -33,11 +33,13 @@ app.use(cors(corsOptions))
 const userRoutes = require('./routes/user')
 const timetableRoutes = require('./routes/timetable')
 const attendanceRoutes = require('./routes/attendance.js')
+const statRoutes = require('./routes/stats.js')
 
 // routes
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
 app.use('/attendance', attendanceRoutes)
+app.use('/stats', statRoutes)
 
 app.listen(port, () => {
   console.log(`Running on port ${port}`)

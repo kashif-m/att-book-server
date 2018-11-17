@@ -34,12 +34,13 @@ router.post('/register', (req, res) => {
       const mm = date.getMonth() + 1
       const yyyy = date.getFullYear()
       date = `${yyyy}-${mm}-${dd}`
-      // add user to database with unset password
-      const addUserQuery = `insert into user values('${uid}', '${email}', 'unset')`
+
+      // add user to database with blank password
+      uid = uniqid.process()
+      const addUserQuery = `insert into user values('${uid}', '${email}', '')`
       return mysql.query(addUserQuery)
     })
     .then(result => {
-      uid = uniqid.process()
 
       if(!result)
         return
