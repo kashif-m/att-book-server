@@ -36,6 +36,7 @@ const statRoutes = require('./routes/stats')
 const passwordResetRoutes = require('./routes/password-reset')
 
 // routes
+app.get('/', (req, res) => res.send('welcome'))
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
 app.use('/attendance', attendanceRoutes)
