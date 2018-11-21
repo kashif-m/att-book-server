@@ -34,5 +34,8 @@
     "sqlstring": "^2.3.1",
     "uniqid": "^5.0.3",
     "validator": "^10.7.1"
+  },
+  "engines": {
+    "node": "11.1.0"
   }
 }
