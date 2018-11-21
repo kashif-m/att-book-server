@@ -8,16 +8,17 @@ opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken()
 opts.secretOrKey = secretOrKey
 
 module.exports = passport => {
-  passport.use(new JwtStrategy(opts, (jwtPayload, done) => {
 
-    const searchUserQuery = `select uID, email from user where uid = '${jwtPayload.uid}'`
+  passport.use(new JwtStrategy(opts, (jwtPayload, done) => {
+    
+    const searchUserQuery = `select uid, email from user where uid = '${jwtPayload.uid}'`
     mysql
       .query(searchUserQuery)
       .then(result => {
         if(result.length !== 0) {
 
           const user = {
-            uid: result[0].uID,
+            uid: result[0].uid,
             email: result[0].email
           }
           return done(null, user)

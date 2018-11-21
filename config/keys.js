@@ -1,4 +1,6 @@
 module.exports = {
-  mongoURI: 'mongodb://localhost:27017/kashif',
-  secretOrKey: 'randomaftext'
+  secretOrKey: 'randomaftext',
+  GOOGLE_PASS: 'byebyegoogle',
+  MySQL_PASS: '79K4V53KD7',
+  MySQL_USER: 'sql12266392'
 }

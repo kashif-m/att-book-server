@@ -1,10 +1,10 @@
 const sql = require('mysql')
 
 const config = {
-  host: 'localhost',
-  user: 'kashif',
-  password: 'batman',
-  database: 'att_book'
+  host: 'sql12.freemysqlhosting.net',
+  user: require('./keys').MySQL_USER,
+  password: require('./keys').MySQL_PASS,
+  database: 'sql12266392'
 }
 
 const connection = sql.createConnection(config)

@@ -17,14 +17,13 @@ router.post('/set', passport.authenticate('jwt', { session: false }), async (req
   
   const { user } = req
   const { classNo, status, subject, _date } = req.body
-  const aid = await getAttendanceID(user.uid)
   const sid = await getSubjectID(subject)
 
   const present = status === 'present'
   const pending = status === 'pending'
 
   const replaceQuery = `replace into attendance
-          values('${aid}', '${_date}', ${classNo}, '${sid}', ${present}, ${pending})`
+          values('${user.uid}', '${_date}', ${classNo}, '${sid}', ${present}, ${pending})`
   mysql
   .query(replaceQuery)
   .then(result => res.json(result))
@@ -40,10 +39,8 @@ router.get('/:date/get', passport.authenticate('jwt', { session: false }), (req,
 
   const { user } = req
   const fetchQuery = `SELECT dayname('${_date}') as day, classNo, sName, present, pending
-    FROM attendance a, profile p, subjects s, user u
-    WHERE u.uid = '${user.uid}' AND
-    p.uid = u.uid AND
-    a.aid = p.aid AND
+    FROM attendance a, subject s
+    WHERE uid = '${user.uid}' AND
     s.sid = a.sid AND
     _date = '${_date}'
     ORDER BY classNo`
@@ -85,9 +82,8 @@ router.get('/:date/getWeekly', passport.authenticate('jwt', { session: false }),
   const endDate = dateFns.format(dateFns.addWeeks(_date, 1), 'YYYY-MM-DD')
 
   const fetchWeeklyQuery = `SELECT dayname(_date) as day, classNo, sName, present, pending
-    FROM attendance a, subjects s, profile p
-    WHERE p.uid='${user.uid}' AND
-      a.aid = p.aid AND
+    FROM attendance a, subject s
+    WHERE uid='${user.uid}' AND
       s.sid = a.sid AND
       _date BETWEEN '${_date}' AND '${endDate}'`
 
@@ -100,6 +96,22 @@ router.get('/:date/getWeekly', passport.authenticate('jwt', { session: false }),
       const attendance = mapAttendance(result)
       res.json(attendance)
     })
+})
+
+router.post('/remove', passport.authenticate('jwt', {session: false}), (req, res) => {
+
+  const { user, body } = req
+  const { date, classNo } = body
+
+  const removeAttendanceQuery = `DELETE FROM attendance
+    WHERE uid = '${user.uid}' AND
+      _date = '${date}' AND
+      classNo = ${classNo}`
+
+  mysql
+    .query(removeAttendanceQuery)
+    .then(result => res.json(result))
+    .catch(err => console.log(err))
 })
 
 module.exports = router

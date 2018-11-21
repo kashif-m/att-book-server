@@ -18,7 +18,6 @@ mysql.connection.connect(err => {
 app.use(passport.initialize())
 require('./config/passport')(passport)
 
-// body parser
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
@@ -32,14 +31,16 @@ app.use(cors(corsOptions))
 // user-defined routes
 const userRoutes = require('./routes/user')
 const timetableRoutes = require('./routes/timetable')
-const attendanceRoutes = require('./routes/attendance.js')
-const statRoutes = require('./routes/stats.js')
+const attendanceRoutes = require('./routes/attendance')
+const statRoutes = require('./routes/stats')
+const passwordResetRoutes = require('./routes/password-reset')
 
 // routes
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
 app.use('/attendance', attendanceRoutes)
 app.use('/stats', statRoutes)
+app.use('/password', passwordResetRoutes)
 
 app.listen(port, () => {
   console.log(`Running on port ${port}`)

@@ -13,9 +13,8 @@ router.get('/overall', passport.authenticate('jwt', { session: false }), (req, r
       count( CASE WHEN present = 1 then 'present' END ) as present,
       count( CASE WHEN pending = 1 then 'pending' END ) as pending,
       count( CASE WHEN present = 0 AND pending = 0 then 'absent' END ) as absent
-      FROM attendance a, subjects s, profile p
-      WHERE p.uid = '${uid}' AND
-      a.aid = p.aid AND
+      FROM attendance a, subject s
+      WHERE uid = '${uid}' AND
       s.sid = a.sid
       GROUP BY sName ORDER BY sName`
 

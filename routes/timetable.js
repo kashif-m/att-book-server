@@ -11,15 +11,13 @@ const { validateTimetableAdd } = require('../validation/validators')
 router.post('/add', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
   const { user, body } = req
-  const { errors, isValid } = validateTimetableAdd(body)
+  const { timetable } = body
+  const { errors, isValid } = validateTimetableAdd(timetable)
   if(!isValid)
     return res.status(400).json(errors)
 
-  const { timetable } = body
-  const ttid = await helpers.getTimetableID(user.uid)
   let affectedRows = 0
-  
-  const daysArr = Object.keys(timetable).map(day => day)
+  const daysArr = Object.keys(timetable)
   const totalDays = daysArr.length
 
   for(var i = 0; i < totalDays; i++) {
@@ -34,7 +32,7 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
       const classNo = classesArr[j]
       const sid = await helpers.getSubjectID(timetable[day][classNo])
       const insertQuery = `insert into timetable
-        values('${ttid}', '${day}', ${j+1}, '${sid}')`
+        values('${user.uid}', '${day}', ${j+1}, '${sid}')`
 
       mysql
         .query(insertQuery)
@@ -47,12 +45,9 @@ router.post('/add', passport.authenticate('jwt', { session: false }), async (req
 })
 
 router.post('/update', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  
+
   const { user, body } = req
   const { timetable } = body
-
-  const ttid = await helpers.getTimetableID(user.uid)
-  
   var affectedRows = 0
   const daysArr = Object.keys(timetable)
   const totalDays = daysArr.length
@@ -60,33 +55,30 @@ router.post('/update', passport.authenticate('jwt', { session: false }), async (
   for(var i = 0; i < totalDays; i++) {
 
     const day = daysArr[i]
-    const totalClasses = Object.keys(timetable[day]).length
     const classesArr = Object.keys(timetable[day])
-    const totalUpdateClasses = classesArr.length
+    const totalClasses = classesArr.length
 
-    for(var j = 0; j < totalUpdateClasses; j++) {
+    for(var j = 0; j < totalClasses; j++) {
 
       const classNo = classesArr[j]
       const sid = await helpers.getSubjectID(timetable[day][classNo])
       const replaceQuery = `replace into timetable
-        values('${ttid}', '${day}', ${j+1}, '${sid}')`
+        values('${user.uid}', '${day}', ${classNo}, '${sid}')`
 
       mysql
         .query(replaceQuery)
         .then(res => affectedRows += res ? res.affectedRows : 0)
         .catch(err => console.log(err))
-    }
-
-    if(totalClasses > totalUpdateClasses) {
-      
-      const removeQuery = `delete from timetable
-        where ttid = '${ttid}' AND
-        classNo > ${totalUpdateClasses}`
-      mysql
-        .query(removeQuery)
-        .then(res => affectedRows += res ? res.affectedRows : 0)
-        .catch(err => console.log(err))
     } // end j loop
+
+    const removeQuery = `delete from timetable
+      where uid = '${uid}' AND
+      day = '${day}' AND
+      classNo > ${totalClasses}`
+    mysql
+      .query(removeQuery)
+      .then(res => affectedRows += res ? res.affectedRows : 0)
+      .catch(err => console.log(err))
   } // end i loop
 
   res.json(affectedRows)
@@ -95,10 +87,8 @@ router.post('/update', passport.authenticate('jwt', { session: false }), async (
 router.delete('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
   const { user } = req
-  const ttid = await helpers.getTimetableID(user.uid)
-
   const removeQuery = `delete from timetable
-    where ttid = '${ttid}'`
+    where uid = '${user.uid}'`
 
   mysql
     .query(removeQuery)
@@ -112,9 +102,8 @@ router.get('/get/:day', passport.authenticate('jwt', { session: false }), (req, 
   const { day } = req.params
 
   const fetchQuery = `select classNo, sname
-    from timetable tt, profile p, subjects s
-    where p.uid = '${user.uid}' AND
-    p.ttid = tt.ttid AND
+    from timetable tt, subject s
+    where uid = '${user.uid}' AND
     s.sid = tt.sid AND
     day = '${day}'`
 
@@ -130,9 +119,8 @@ router.get('/fetch', passport.authenticate('jwt', { session: false }), (req, res
 
   const { user } = req
   const fetchQuery = `select day, classNo, sname
-    from timetable tt, profile p, subjects s
-    where p.uid = '${user.uid}' AND
-    p.ttid = tt.ttid AND
+    from timetable tt, subject s
+    where uid = '${user.uid}' AND
     tt.sid = s.sid`
   mysql
     .query(fetchQuery)

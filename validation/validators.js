@@ -8,7 +8,7 @@ value === null ||
 
 
 module.exports = {
-  validateRegister: function(data) {
+  validateUserForm: function(data) {
     
     const errors = {}
     const email = isEmpty(data.email) ? '' : data.email
@@ -28,39 +28,19 @@ module.exports = {
       isValid: isEmpty(errors)
     }
   },
-  validateLogin: function(data) {
-
-    const errors = {}
-    const email = isEmpty(data.email) ? '' : data.email
-    const password = isEmpty(data.password) ? '' : data.password
-
-    if(validator.isEmpty(email))
-      errors.email = 'Please enter your e-mail.'
-    if(!errors.email && !validator.isEmail(email))
-      errors.email = 'Please enter a valid e-mail.'
-    if(validator.isEmpty(password))
-      errors.password = 'Please enter your password.'
-    if(!errors.password && !validator.isLength(password, {min: 6, max: 30}))
-      errors.password = 'Password must be between 6 and 30 characters long.'
-
-    return {
-      errors,
-      isValid: isEmpty(errors)
-    }
-  },
-  validateTimetableAdd: function(data) {
+  validateTimetableAdd: function(timetable) {
 
     const errors = {}
 
     let classes = []
-    const days = Object.keys(data.timetable)[0]
+    const days = Object.keys(timetable)[0]
     if(!isEmpty(days))
-      classes = Object.keys(data.timetable[days])
+      classes = Object.keys(timetable[days])
 
     if(isEmpty(days))
-      errors.data = 'No days to insert.'
+      errors.timetable = 'No days to insert.'
     else if(isEmpty(classes))
-      errors.data = 'No classes to insert.'
+      errors.timetable = 'No classes to insert.'
 
     return {
       errors,
