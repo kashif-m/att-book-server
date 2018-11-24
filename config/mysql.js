@@ -7,16 +7,24 @@ const config = {
   database: 'sql12266392'
 }
 
-const connection = sql.createConnection(config)
+const pool = sql.createPool(config)
+
 module.exports = {
-  connection,
-  query: function(SQLQuery, args) {
+  query: function(SQLQuery) {
+
     return new Promise((resolve, reject) => {
-      connection.query(SQLQuery, (err, result, field) => {
+      pool.getConnection(function(err, connection) {
         if(err)
           return reject(err)
+        
+        connection.query(SQLQuery, (err, results, fields) => {
+          connection.release()
+          
+          if(err)
+            return reject(err)
 
-        resolve(result, field)
+          resolve(results, fields)
+        })
       })
     })
   }

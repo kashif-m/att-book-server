@@ -4,15 +4,7 @@ const express = require('express')
 const passport = require('passport')
 
 const app = express()
-const mysql = require('./config/mysql')
 const port = process.env.PORT || 5000
-
-// connect to MySQL DB
-mysql.connection.connect(err => {
-  if(err)
-    return console.log('Error connecting to MySQL database ' + err)
-  console.log('Connected to MySQL.')
-})
 
 // passport authorization
 app.use(passport.initialize())
@@ -43,4 +35,4 @@ app.use('/attendance', attendanceRoutes)
 app.use('/stats', statRoutes)
 app.use('/password', passwordResetRoutes)
 
-app.listen(port)
+app.listen(port, () => console.log(`Listening on port ${port}.`))
