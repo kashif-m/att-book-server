@@ -137,7 +137,7 @@ router.get('/verify/:token', (req, res) => {
         const updateProfileQuery = `UPDATE profile set verified = ${true} WHERE uid = '${uid}'`
         mysql
           .query(updateProfileQuery)
-          .then(result => res.send('Successfully verified.'))
+          .then(() => res.send('Successfully verified.'))
           .catch(err => console.log(err))
       })
       .catch(err => console.log(err))
@@ -147,5 +147,16 @@ router.get('/verify/:token', (req, res) => {
 })
 
 router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => res.json(req.user))
+
+router.delete('/delete', passport.authenticate('jwt', { session: false }), (req, res) => {
+  
+  const { user } = req
+  
+  const deleteQuery = `DELETE from user where uid = '${user.uid}'`
+  mysql
+    .query(deleteQuery)
+    .then(result => res.json(result))
+    .catch(err => res.json(err))
+})
 
 module.exports = router

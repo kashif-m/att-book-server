@@ -79,7 +79,7 @@ router.get('/:date/getWeekly', passport.authenticate('jwt', { session: false }),
 
   const { user } = req
   const _date = req.params.date
-  const endDate = dateFns.format(dateFns.addWeeks(_date, 1), 'YYYY-MM-DD')
+  const endDate = dateFns.format(dateFns.endOfWeek(_date), 'YYYY-MM-DD')
 
   const fetchWeeklyQuery = `SELECT dayname(_date) as day, classNo, sName, present, pending
     FROM attendance a, subject s

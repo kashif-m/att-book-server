@@ -1,13 +1,22 @@
 const sql = require('mysql')
 
-const config = {
+const prodConfig = {
+  connectionLimit: 10,
   host: 'sql12.freemysqlhosting.net',
   user: require('./keys').MySQL_USER,
   password: require('./keys').MySQL_PASS,
   database: 'sql12266392'
 }
 
-const pool = sql.createPool(config)
+const devConfig = {
+  connectionLimit: 10,
+  host: 'localhost',
+  user: 'kashif',
+  password: 'batman',
+  database: 'att_book'
+}
+
+const pool = sql.createPool(devConfig)
 
 module.exports = {
   query: function(SQLQuery) {

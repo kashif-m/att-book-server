@@ -72,7 +72,7 @@ router.post('/update', passport.authenticate('jwt', { session: false }), async (
     } // end j loop
 
     const removeQuery = `delete from timetable
-      where uid = '${uid}' AND
+      where uid = '${user.uid}' AND
       day = '${day}' AND
       classNo > ${totalClasses}`
     mysql
