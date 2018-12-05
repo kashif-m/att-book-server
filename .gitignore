@@ -1,4 +1,4 @@
-# client code
+﻿# client code
 client
 # dependencies
 node_modules
@@ -6,8 +6,4 @@ node_modules
 npm-debug.log
 
 # misc
-test.js
-*.odt*
-*.pdf
-*.gvdesign
-*.png
+FINAL
