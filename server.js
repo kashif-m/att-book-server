@@ -2,6 +2,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const express = require('express')
 const passport = require('passport')
+const path = require('path')
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -28,11 +29,18 @@ const statRoutes = require('./routes/stats')
 const passwordResetRoutes = require('./routes/password-reset')
 
 // routes
-app.get('/', (req, res) => res.send('welcome'))
 app.use('/user', userRoutes)
 app.use('/timetable', timetableRoutes)
 app.use('/attendance', attendanceRoutes)
 app.use('/stats', statRoutes)
 app.use('/password', passwordResetRoutes)
+
+// serve static assests
+if(process.env.NODE_ENV === 'production') {
+  app.use(express.static('client/build'))
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'))
+  })
+}
 
 app.listen(port, () => console.log(`Listening on port ${port}.`))
