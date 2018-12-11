@@ -4,6 +4,5 @@ client
 node_modules
 # logs
 npm-debug.log
-
 # misc
-FINAL
+./config/keys_dev.js
