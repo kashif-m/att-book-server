@@ -16,7 +16,7 @@ const devConfig = {
   database: 'att_book'
 }
 
-const pool = sql.createPool(devConfig)
+const pool = sql.createPool(process.env.NODE_ENV === 'production' ? prodConfig : devConfig)
 
 module.exports = {
   query: function(SQLQuery) {
